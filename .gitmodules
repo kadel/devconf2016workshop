@@ -1,0 +1,6 @@
+[submodule "helloflask"]
+	path = helloflask
+	url = https://github.com/kadel/helloflask
+[submodule "helloflask-atomicapp"]
+	path = helloflask-atomicapp
+	url = https://github.com/kadel/helloflask-atomicapp
