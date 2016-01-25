@@ -1,0 +1,45 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+PUBLIC_ADDRESS = "10.1.2.3"
+MEMORY = 2048
+CPUS = 2
+
+# Vagrantfile for single node k8s setup
+Vagrant.configure(2) do |config|
+  config.vm.box = "projectatomic/adb"
+
+  config.vm.provider "libvirt" do |libvirt, override|
+    libvirt.driver = "kvm"
+    libvirt.memory = "#{MEMORY}"
+    libvirt.cpus = "#{CPUS}"
+  end
+
+  config.vm.provider "virtualbox" do |vbox, override|
+    vbox.memory = "#{MEMORY}"
+    vbox.cpus = "#{CPUS}"
+
+    # Enable use of more than one virtual CPU in a virtual machine.
+    vbox.customize ["modifyvm", :id, "--ioapic", "on"]
+  end
+
+  # Setup a DHCP based private network
+  config.vm.network "private_network", ip: "#{PUBLIC_ADDRESS}"
+  #config.vm.network "private_network", type: "dhcp"
+
+  config.vm.provision "shell", inline: <<-SHELL
+     sudo mkdir -p /etc/pki/kube-apiserver/
+     sudo openssl genrsa -out /etc/pki/kube-apiserver/serviceaccount.key 2048
+     sudo sed -i.back '/KUBE_API_ARGS=*/c\KUBE_API_ARGS="--service_account_key_file=/etc/pki/kube-apiserver/serviceaccount.key"' /etc/kubernetes/apiserver
+     sudo sed -i.back '/KUBE_CONTROLLER_MANAGER_ARGS=*/c\KUBE_CONTROLLER_MANAGER_ARGS="--service_account_private_key_file=/etc/pki/kube-apiserver/serviceaccount.key"' /etc/kubernetes/controller-manager
+
+     sudo sed -i.back '/KUBE_API_ADDRESS=*/c\KUBE_API_ADDRESS="--address=0.0.0.0"' /etc/kubernetes/apiserver
+
+     sudo systemctl enable etcd kube-apiserver kube-controller-manager kube-scheduler
+     sudo systemctl start etcd kube-apiserver kube-controller-manager kube-scheduler
+
+     sudo systemctl enable kube-proxy kubelet
+     sudo systemctl start kube-proxy kubelet
+     sudo systemctl restart docker
+  SHELL
+end
