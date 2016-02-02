@@ -48,4 +48,4 @@
                 - marathon
 
           - name: Run service router
-            shell: docker run -d --net=host -e MARATHON=http://{{ public_address }}:8080  tomaskral/marathon-servicerouter
+            shell: docker run -d --restart=always --net=host -e MARATHON=http://{{ public_address }}:8080  tomaskral/marathon-servicerouter
