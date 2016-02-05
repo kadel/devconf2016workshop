@@ -1,0 +1,4 @@
+# to be able to access service IPs from outside the box, you need to 
+# route all traffic to 10.254.0.0/16 to Kubernetes node.
+
+ip r a 10.254.0.0/16 via 10.1.2.3 dev vboxnet4  src 10.1.2.1
